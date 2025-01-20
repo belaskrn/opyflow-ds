@@ -40,13 +40,19 @@ def opyfTrack(tracks, vtracks, gray, prev_gray, incr, feature_params, lk_params,
         new_vtracks = []
         Vtemp = p1.reshape(-1, 2)-p0.reshape(-1, 2)
 
+        # #modif (menyimpan nilai norm velocity (magnitudo kecepatan)
+        # norm_velocity = []
+        
         for tr, vtr, (x, y), (vx, vy), good_flag in zip(tracks, vtracks, p1.reshape(-1, 2), Vtemp, good):
             if not good_flag:
                 continue
             if int(y) >= gray.shape[0] or int(x) >= gray.shape[1] or int(y) < 0 or int(x) < 0:
                 continue
             norm = (vx**2+vy**2)**0.5
-                      
+            
+            # #modif (menyimpan nilai norm velocity)
+            # norm_velocity.append(norm)
+            
             if norm < vmin or norm > vmax:
                 continue
             if maskFrame is not None:
@@ -59,6 +65,11 @@ def opyfTrack(tracks, vtracks, gray, prev_gray, incr, feature_params, lk_params,
                 del vtr[0]
             new_tracks.append(tr)
             new_vtracks.append(vtr)
+
+        #modif (menghitung rata-rata magnitudo kecepatan) 
+        # if norm_velocity:
+        #     avg_velocity = sum(norm_velocity) / len(norm_velocity)
+        #     print(f'Average Velocity / frames: {avg_speed:.2f} px/frame')
         
         tracks = new_tracks
         vtracks = new_vtracks
@@ -74,6 +85,18 @@ def opyfTrack(tracks, vtracks, gray, prev_gray, incr, feature_params, lk_params,
         for x, y in [np.int32(tr[-1]) for tr in tracks]:
             cv2.circle(mask, (x, y), 5, 0, -1)
         p = cv2.goodFeaturesToTrack(gray, mask=mask, **feature_params)
+
+        # Visualisasi fitur
+        if p is not None:
+            vis = gray.copy()
+            vis = cv2.cvtColor(vis, cv2.COLOR_GRAY2BGR)
+            for x, y in np.float32(p).reshape(-1, 2):
+                cv2.circle(vis, (int(x), int(y)), 5, (0, 255, 0), -1)
+            
+            # Display the image with detected features
+            plt.imshow(vis)
+            plt.title("Detected Features")
+            plt.show()
 
         print('----- Number of new features detected :'+str(len(p)))
         if p is not None:
